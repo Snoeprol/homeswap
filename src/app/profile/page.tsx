@@ -186,7 +186,7 @@ export default function ProfilePage() {
           </h1>
           <div className="flex flex-col items-center mb-6">
             <Image
-              src={user.photoURL || '/default-avatar.png'}
+              src={user.photoURL || '/default-avatar.jpg'}
               alt="Profile Picture"
               width={100}
               height={100}

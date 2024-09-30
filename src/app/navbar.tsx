@@ -2,20 +2,70 @@
 
 import { useState, useEffect } from 'react';
 import Link from "next/link";
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { RepeatIcon, InfoIcon, SearchIcon, UserIcon, LogInIcon, HomeIcon } from "lucide-react";
-import { auth } from '@/lib/firebase';
+import { RepeatIcon, InfoIcon, SearchIcon, UserIcon, LogInIcon, HomeIcon, LogOutIcon, MessageCircleIcon } from "lucide-react";
+import { auth, database } from '@/lib/firebase';
+import { User } from 'firebase/auth';
+import { ref, onValue, off } from 'firebase/database';
+
+interface Chat {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  lastMessage: string;
+  timestamp: number;
+}
 
 export default function Navbar() {
-  const [user, setUser] = useState(auth.currentUser);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
+      setIsLoading(false);
+      if (user) {
+        fetchChats(user.uid);
+      }
     });
 
     return () => unsubscribe();
   }, []);
+
+  const fetchChats = (userId: string) => {
+    const chatsRef = ref(database, `userChats/${userId}`);
+    onValue(chatsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const chatsData = snapshot.val();
+        const chatsArray = Object.entries(chatsData).map(([key, chatData]) => {
+          const chat = chatData as Chat;
+          return {
+            ...chat,
+            id: key, // This will overwrite any existing 'id' in the chat object
+          };
+        });
+        setChats(chatsArray);
+      }
+    });
+
+    return () => off(chatsRef);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-md">
@@ -34,17 +84,27 @@ export default function Navbar() {
               <SearchIcon className="h-5 w-5 mr-1" />
               Browse Homes
             </Link>
-            <Link href="/list-your-house" className="flex items-center text-gray-600 hover:text-orange-500 transition-colors">
-              <HomeIcon className="h-5 w-5 mr-1" />
-              List Your House
-            </Link>
             {user ? (
-              <Button asChild variant="ghost" className="text-gray-600 hover:text-orange-500">
-                <Link href="/profile" className="flex items-center">
-                  <UserIcon className="h-5 w-5 mr-2" />
-                  Profile
+              <>
+                <Link href="/list-your-house" className="flex items-center text-gray-600 hover:text-orange-500 transition-colors">
+                  <HomeIcon className="h-5 w-5 mr-1" />
+                  List Your House
                 </Link>
-              </Button>
+                <Link href="/chats" className="flex items-center text-gray-600 hover:text-orange-500 transition-colors">
+                  <MessageCircleIcon className="h-5 w-5 mr-1" />
+                  Chats
+                </Link>
+                <Button asChild variant="ghost" className="text-gray-600 hover:text-orange-500">
+                  <Link href="/profile" className="flex items-center">
+                    <UserIcon className="h-5 w-5 mr-2" />
+                    Profile
+                  </Link>
+                </Button>
+                <Button onClick={handleLogout} variant="ghost" className="text-gray-600 hover:text-orange-500">
+                  <LogOutIcon className="h-5 w-5 mr-2" />
+                  Logout
+                </Button>
+              </>
             ) : (
               <Button asChild variant="ghost" className="text-gray-600 hover:text-orange-500">
                 <Link href="/auth" className="flex items-center">
