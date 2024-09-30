@@ -1,100 +1,118 @@
 import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowRightIcon, HomeIcon, SearchIcon, KeyIcon } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="bg-gradient-to-b from-orange-50 to-amber-100">
+      <div className="container mx-auto px-4 py-12">
+        <section className="text-center mb-16">
+          <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
+            Swap Homes, Create Memories
+          </h1>
+          <p className="text-xl mb-8 text-gray-600 max-w-2xl mx-auto">
+            Experience new places like a local. HouseSwap connects you with homeowners worldwide for unforgettable exchanges.
+          </p>
+          <Button asChild size="lg" className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white">
+            <Link href="/auth" className="inline-flex items-center">
+              Start Your Journey
+              <ArrowRightIcon className="ml-2 h-5 w-5" />
+            </Link>
+          </Button>
+        </section>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        <section className="mb-20">
+          <h2 className="text-3xl font-bold mb-10 text-center text-gray-800">How It Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {[
+              { icon: HomeIcon, title: "List Your Home", description: "Share your space and set your preferences for the perfect exchange." },
+              { icon: SearchIcon, title: "Discover & Connect", description: "Browse homes worldwide and connect with potential swap partners." },
+              { icon: KeyIcon, title: "Swap & Experience", description: "Finalize details, exchange keys, and immerse yourself in a new locale." }
+            ].map((step, index) => (
+              <div key={index} className="flex flex-col items-center text-center p-6 bg-white rounded-xl shadow-lg transition-all hover:shadow-xl">
+                <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-full p-4 mb-6">
+                  <step.icon className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-800">{step.title}</h3>
+                <p className="text-gray-600">{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mb-20">
+          <h2 className="text-3xl font-bold mb-10 text-center text-gray-800">Featured Homes</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-xl overflow-hidden bg-white shadow-lg transition-all hover:shadow-xl">
+                <Image 
+                  src={`/placeholder.svg?height=300&width=400&text=Home+${i}`}
+                  alt={`Featured Home ${i}`} 
+                  width={400} 
+                  height={300} 
+                  className="w-full h-56 object-cover"
+                />
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold mb-2 text-gray-800">Charming Retreat in Location {i}</h3>
+                  <p className="text-gray-600 mb-4">Immerse yourself in local culture and comfort in this beautiful property.</p>
+                  <Button variant="outline" className="w-full text-orange-500 border-orange-500 hover:bg-orange-50">
+                    View Details
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="text-center mb-20 bg-white rounded-xl shadow-lg p-10">
+          <h2 className="text-3xl font-bold mb-4 text-gray-800">Ready to Start Your Adventure?</h2>
+          <p className="text-xl mb-8 text-gray-600 max-w-2xl mx-auto">Join our community of home swappers and unlock a world of unique travel experiences.</p>
+          <Button asChild size="lg" className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white">
+            <Link href="/auth" className="inline-flex items-center">
+              Get Started Now
+              <ArrowRightIcon className="ml-2 h-5 w-5" />
+            </Link>
+          </Button>
+        </section>
+      </div>
+
+      <footer className="bg-gray-800 text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-lg font-semibold mb-4">About HouseSwap</h3>
+              <p className="text-gray-400">Connecting homeowners worldwide for unforgettable travel experiences.</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <ul className="space-y-2">
+                <li><Link href="/how-it-works" className="text-gray-400 hover:text-white transition-colors">How It Works</Link></li>
+                <li><Link href="/browse" className="text-gray-400 hover:text-white transition-colors">Browse Homes</Link></li>
+                <li><Link href="/auth" className="text-gray-400 hover:text-white transition-colors">Login / Sign Up</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Support</h3>
+              <ul className="space-y-2">
+                <li><Link href="/faq" className="text-gray-400 hover:text-white transition-colors">FAQ</Link></li>
+                <li><Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contact Us</Link></li>
+                <li><Link href="/safety" className="text-gray-400 hover:text-white transition-colors">Safety Guide</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Legal</h3>
+              <ul className="space-y-2">
+                <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/cookies" className="text-gray-400 hover:text-white transition-colors">Cookie Policy</Link></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-8 pt-8 border-t border-gray-700 text-center text-gray-400">
+            <p>&copy; {new Date().getFullYear()} HouseSwap. All rights reserved.</p>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
       </footer>
     </div>
   );
