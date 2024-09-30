@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Image from 'next/image';
 import Link from 'next/link';
+import { Listing } from '@/types/listing';
 
 interface Listing {
   id: string;
@@ -68,8 +69,8 @@ export default function ProfilePage() {
     if (snapshot.exists()) {
       const allListings = snapshot.val();
       const userListings = Object.entries(allListings)
-        .filter(([_, listing]: [string, any]) => listing.userId === userId)
-        .map(([id, data]: [string, any]) => ({
+        .filter(([, listing]: [string, Listing]) => listing.userId === userId)
+        .map(([id, data]: [string, Listing]) => ({
           id,
           ...data,
         }));
@@ -259,7 +260,7 @@ export default function ProfilePage() {
                 ))}
               </div>
             ) : (
-              <p>You don't have any active listings yet.</p>
+              <p>You don&apos;t have any active listings yet.</p>
             )}
             <Link href="/list-your-house" passHref>
               <Button className="mt-6 w-full">Create New Listing</Button>

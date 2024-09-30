@@ -12,6 +12,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Switch } from "@/components/ui/switch";
+import { User } from 'firebase/auth';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -42,7 +43,7 @@ export default function AuthPage() {
     resolver: zodResolver(signupSchema),
   });
 
-  const saveUserProfile = async (user: any) => {
+  const saveUserProfile = async (user: User) => {
     const userRef = ref(database, `users/${user.uid}`);
     await set(userRef, {
       displayName: user.displayName,

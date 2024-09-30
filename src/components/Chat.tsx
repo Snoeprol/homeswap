@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { auth, database } from '@/lib/firebase';
 import { ref, push, onChildAdded, off } from 'firebase/database';
@@ -13,10 +15,9 @@ interface Message {
 
 interface ChatProps {
   listingId: string;
-  ownerId: string;
 }
 
-const Chat: React.FC<ChatProps> = ({ listingId, ownerId }) => {
+const Chat: React.FC<ChatProps> = ({ listingId }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const currentUser = auth.currentUser;

@@ -3,15 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { database, auth } from '@/lib/firebase';
-import { ref, get } from 'firebase/database';
+import { ref, onValue, off, remove } from 'firebase/database';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, BedDouble, Bath, Square, Wifi, Tv, Car, Snowflake, Coffee, MessageCircle } from 'lucide-react';
-import Chat from '@/components/Chat';
+import { MapPin, BedDouble, Bath, Square, Wifi, Tv, Car, Snowflake, Coffee, MessageCircle, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface Listing {
   id: string;
@@ -38,6 +38,14 @@ interface User {
   email: string;
 }
 
+const amenityIcons: { [key: string]: JSX.Element } = {
+  "Wi-Fi": <Wifi className="h-4 w-4" />,
+  "TV": <Tv className="h-4 w-4" />,
+  "Parking": <Car className="h-4 w-4" />,
+  "Air Conditioning": <Snowflake className="h-4 w-4" />,
+  "Coffee Maker": <Coffee className="h-4 w-4" />,
+};
+
 export default function ListingPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -45,24 +53,18 @@ export default function ListingPage() {
   const [owner, setOwner] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showChat, setShowChat] = useState(false);
   const currentUser = auth.currentUser;
 
   useEffect(() => {
-    const fetchListingAndOwner = async () => {
-      setIsLoading(true);
-      try {
-        const listingRef = ref(database, `listings/${id}`);
-        const listingSnapshot = await get(listingRef);
-        
-        if (listingSnapshot.exists()) {
-          const listingData = listingSnapshot.val();
-          setListing({ id: listingSnapshot.key, ...listingData });
-          
-          // Fetch owner data
-          const ownerRef = ref(database, `users/${listingData.userId}`);
-          const ownerSnapshot = await get(ownerRef);
-          
+    const listingRef = ref(database, `listings/${id}`);
+
+    const listingListener = onValue(listingRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const listingData = snapshot.val();
+        setListing({ id: snapshot.key!, ...listingData });
+
+        // Fetch owner data
+        const ownerListener = onValue(ref(database, `users/${listingData.userId}`), (ownerSnapshot) => {
           if (ownerSnapshot.exists()) {
             const ownerData = ownerSnapshot.val();
             setOwner({
@@ -78,48 +80,57 @@ export default function ListingPage() {
               email: 'Email not available',
             });
           }
-        } else {
-          setError('Listing not found');
-        }
-      } catch (err) {
-        console.error('Error fetching listing:', err);
-        setError('Failed to load listing');
-      } finally {
+          setIsLoading(false);
+        });
+
+        return () => {
+          off(ref(database, `users/${listingData.userId}`), 'value', ownerListener);
+        };
+      } else {
+        setError('Listing not found');
         setIsLoading(false);
       }
-    };
+    }, (error) => {
+      console.error('Error fetching listing:', error);
+      setError('Failed to load listing');
+      setIsLoading(false);
+    });
 
-    if (id) {
-      fetchListingAndOwner();
-    }
+    return () => {
+      off(listingRef, 'value', listingListener);
+    };
   }, [id]);
 
   const handleChatClick = () => {
     if (currentUser) {
       if (currentUser.uid === listing?.userId) {
-        // If the current user is the owner, show an alert
         alert("This is your own listing. You can't chat with yourself.");
       } else {
-        // Navigate to chat page
         router.push(`/chat/${id}`);
       }
     } else {
-      // Redirect to auth page
       router.push('/auth');
+    }
+  };
+
+  const handleDeleteListing = async () => {
+    if (!listing || !currentUser || currentUser.uid !== listing.userId) {
+      return;
+    }
+
+    try {
+      const listingRef = ref(database, `listings/${id}`);
+      await remove(listingRef);
+      router.push('/profile'); // Redirect to profile page after deletion
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+      alert('Failed to delete listing. Please try again.');
     }
   };
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
   if (!listing) return <div>Listing not found</div>;
-
-  const amenityIcons: { [key: string]: JSX.Element } = {
-    'Wi-Fi': <Wifi className="h-4 w-4" />,
-    'TV': <Tv className="h-4 w-4" />,
-    'Free parking': <Car className="h-4 w-4" />,
-    'Air conditioning': <Snowflake className="h-4 w-4" />,
-    'Kitchen': <Coffee className="h-4 w-4" />,
-  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -145,19 +156,21 @@ export default function ListingPage() {
             <CarouselPrevious />
             <CarouselNext />
           </Carousel>
-          
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <div className="flex items-center">
-              <BedDouble className="h-5 w-5 mr-2" />
-              <span>{listing.bedrooms} Bedrooms</span>
-            </div>
-            <div className="flex items-center">
-              <Bath className="h-5 w-5 mr-2" />
-              <span>{listing.bathrooms} Bathrooms</span>
-            </div>
-            <div className="flex items-center">
-              <Square className="h-5 w-5 mr-2" />
-              <span>{listing.totalArea} m²</span>
+
+          <div className="mt-6 flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center">
+                <BedDouble className="h-5 w-5 mr-1" />
+                <span>{listing.bedrooms} Bedrooms</span>
+              </div>
+              <div className="flex items-center">
+                <Bath className="h-5 w-5 mr-1" />
+                <span>{listing.bathrooms} Bathrooms</span>
+              </div>
+              <div className="flex items-center">
+                <Square className="h-5 w-5 mr-1" />
+                <span>{listing.totalArea} m²</span>
+              </div>
             </div>
             <div>
               <Badge variant={listing.isRentInclusive ? "default" : "secondary"}>
@@ -201,25 +214,38 @@ export default function ListingPage() {
               <p className="text-sm text-gray-500">{owner?.email}</p>
             </div>
           </div>
-          <div>
+          <div className="flex items-center space-x-2">
             <p className="text-2xl font-bold">${listing.rentPrice}/month</p>
-            <Button 
-              className="mt-2 flex items-center" 
-              onClick={handleChatClick}
-            >
-              <MessageCircle className="mr-2 h-4 w-4" />
-              Contact Owner
-            </Button>
+            {currentUser && currentUser.uid === listing.userId ? (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Listing
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your listing.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteListing}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : (
+              <Button onClick={handleChatClick}>
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Contact Owner
+              </Button>
+            )}
           </div>
         </CardFooter>
       </Card>
-
-      {showChat && currentUser && currentUser.uid !== listing.userId && (
-        <div className="mt-8">
-          <h2 className="text-2xl font-semibold mb-4">Chat with Owner</h2>
-          <Chat listingId={listing.id} ownerId={listing.userId} />
-        </div>
-      )}
     </div>
   );
 }
