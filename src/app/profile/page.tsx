@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Image from 'next/image';
 import Link from 'next/link';
-import { Listing } from '@/types/listing';
 
 interface Listing {
   id: string;
@@ -21,6 +20,7 @@ interface Listing {
   city: string;
   country: string;
   images: string[];
+  userId: string;
 }
 
 export default function ProfilePage() {
@@ -69,11 +69,14 @@ export default function ProfilePage() {
     if (snapshot.exists()) {
       const allListings = snapshot.val();
       const userListings = Object.entries(allListings)
-        .filter(([, listing]: [string, Listing]) => listing.userId === userId)
-        .map(([id, data]: [string, Listing]) => ({
-          id,
-          ...data,
-        }));
+        .filter(([, listing]) => (listing as Listing).userId === userId)
+        .map(([key, data]) => {
+          const { id, ...rest } = data as Listing;
+          return {
+            ...rest,
+            id: key, // Use the Firebase key as the id
+          };
+        });
       setUserListings(userListings);
     }
   };

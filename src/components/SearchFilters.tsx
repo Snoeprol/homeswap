@@ -1,22 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, ChangeEvent, FormEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function SearchFilters({ onFilter }) {
-  const [filters, setFilters] = useState({
+interface Filters {
+  minPrice: string;
+  maxPrice: string;
+  propertyType: string;
+  location: string;
+}
+
+export default function SearchFilters({ onFilter }: { onFilter: (filters: Filters) => void }) {
+  const [filters, setFilters] = useState<Filters>({
     minPrice: '',
     maxPrice: '',
     propertyType: '',
     location: '',
   });
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onFilter(filters);
   };
