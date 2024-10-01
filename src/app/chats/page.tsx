@@ -8,10 +8,11 @@ import { useRouter } from 'next/navigation';
 
 interface Chat {
   id: string;
-  lastMessage: string;
-  timestamp: number;
+  withUser: string;
   listingId: string;
   listingTitle: string;
+  lastMessage: string;
+  timestamp: number;
 }
 
 export default function ChatsPage() {

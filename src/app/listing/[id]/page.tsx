@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { database, auth } from '@/lib/firebase';
-import { ref, onValue, off, remove } from 'firebase/database';
+import { ref, onValue, off, remove, get, set, push, serverTimestamp } from 'firebase/database';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,15 +101,73 @@ export default function ListingPage() {
     };
   }, [id]);
 
-  const handleChatClick = () => {
-    if (currentUser) {
-      if (currentUser.uid === listing?.userId) {
-        alert("This is your own listing. You can't chat with yourself.");
-      } else {
-        router.push(`/chat/${id}`);
-      }
-    } else {
+  const handleChatClick = async () => {
+    if (!currentUser) {
       router.push('/auth');
+      return;
+    }
+
+    if (currentUser.uid === listing?.userId) {
+      alert("This is your own listing. You can't chat with yourself.");
+      return;
+    }
+
+    try {
+      const listingOwnerId = listing?.userId;
+      const currentUserId = currentUser.uid;
+      
+      // Create a unique chatId
+      const chatId = [currentUserId, listingOwnerId].sort().join('_');
+
+      // Reference to the chat in the database
+      const chatRef = ref(database, `chats/${chatId}`);
+
+      // Check if the chat already exists
+      const chatSnapshot = await get(chatRef);
+
+      if (!chatSnapshot.exists()) {
+        // If the chat doesn't exist, create it
+        await set(chatRef, {
+          participants: {
+            [currentUserId]: true,
+            [listingOwnerId]: true
+          },
+          listingId: listing?.id,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        // Create initial message
+        const messagesRef = ref(database, `chats/${chatId}/messages`);
+        await push(messagesRef, {
+          senderId: currentUserId,
+          text: `Hi, I'm interested in your listing: ${listing?.title}`,
+          timestamp: serverTimestamp()
+        });
+
+        // Add chat to both users' userChats
+        await set(ref(database, `userChats/${currentUserId}/${chatId}`), {
+          withUser: listingOwnerId,
+          listingId: listing?.id,
+          listingTitle: listing?.title,
+          lastMessage: `Hi, I'm interested in your listing: ${listing?.title}`,
+          timestamp: serverTimestamp()
+        });
+
+        await set(ref(database, `userChats/${listingOwnerId}/${chatId}`), {
+          withUser: currentUserId,
+          listingId: listing?.id,
+          listingTitle: listing?.title,
+          lastMessage: `Hi, I'm interested in your listing: ${listing?.title}`,
+          timestamp: serverTimestamp()
+        });
+      }
+
+      // Navigate to the chat page
+      router.push(`/chat/${chatId}`);
+    } catch (error) {
+      console.error("Error creating chat:", error);
+      alert("Failed to create chat. Please try again.");
     }
   };
 

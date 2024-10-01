@@ -41,6 +41,7 @@ export default function ChatPage() {
   const currentUser = auth.currentUser;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     if (!auth.currentUser) {
@@ -49,62 +50,73 @@ export default function ChatPage() {
     }
 
     const chatRef = ref(database, `chats/${id}`);
-    const listingRef = ref(database, `listings/${id}`);
 
-    // Fetch listing data
-    get(listingRef).then((snapshot) => {
-      if (snapshot.exists()) {
-        const listingData = snapshot.val();
-        setListing({
-          id: id as string,
-          title: listingData.title,
-          image: listingData.images[0] || '/placeholder.jpg',
-          userId: listingData.userId
-        });
+    const fetchData = async () => {
+      try {
+        // Fetch chat data
+        const chatSnapshot = await get(chatRef);
+        if (chatSnapshot.exists()) {
+          const chatData = chatSnapshot.val();
+          if (chatData.messages) {
+            const messagesArray = Object.entries(chatData.messages).map(([key, value]) => ({
+              ...(value as Message),
+              id: key,
+            }));
+            setMessages(messagesArray);
+          }
 
-        // Fetch other user's data
-        if (listingData.userId !== currentUser?.uid) {
-          const userRef = ref(database, `users/${listingData.userId}`);
-          get(userRef).then((userSnapshot) => {
-            if (userSnapshot.exists()) {
-              const userData = userSnapshot.val();
-              setOtherUser({
-                id: listingData.userId,  // Add this line
-                displayName: userData.displayName,
-                photoURL: userData.photoURL || '/default-avatar.jpg'
-              });
+          // Fetch listing data
+          const listingSnapshot = await get(ref(database, `listings/${chatData.listingId}`));
+          if (listingSnapshot.exists()) {
+            const listingData = listingSnapshot.val();
+            setListing({
+              id: chatData.listingId,
+              title: listingData.title,
+              image: listingData.images[0] || '/placeholder.jpg',
+              userId: listingData.userId
+            });
+
+            // Fetch other user's data
+            const otherUserId = Object.keys(chatData.participants).find(uid => uid !== currentUser?.uid);
+            if (otherUserId) {
+              const userSnapshot = await get(ref(database, `users/${otherUserId}`));
+              if (userSnapshot.exists()) {
+                const userData = userSnapshot.val();
+                setOtherUser({
+                  id: otherUserId,
+                  displayName: userData.displayName,
+                  photoURL: userData.photoURL || '/default-avatar.jpg'
+                });
+              }
             }
-          });
+          }
         }
+        setIsInitialLoad(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setIsInitialLoad(false);
       }
-    });
+    };
 
-    // Fetch existing messages and listen for new ones
-    get(chatRef).then((snapshot) => {
-      if (snapshot.exists()) {
-        const messagesData = snapshot.val();
-        const messagesArray = Object.entries(messagesData).map(([key, value]) => ({
-          ...(value as Message),
-          id: key,
-        }));
-        setMessages(messagesArray);
+    fetchData();
+
+    const handleNewMessage = onChildAdded(ref(database, `chats/${id}/messages`), (snapshot) => {
+      if (!isInitialLoad) {
+        const newMessage = snapshot.val();
+        setMessages((prevMessages) => {
+          // Check if the message already exists
+          if (!prevMessages.some(msg => msg.id === snapshot.key)) {
+            return [...prevMessages, { ...newMessage, id: snapshot.key! }];
+          }
+          return prevMessages;
+        });
       }
-    });
-
-    const handleNewMessage = onChildAdded(chatRef, (snapshot) => {
-      const message = snapshot.val();
-      setMessages((prevMessages) => {
-        if (!prevMessages.some(m => m.id === snapshot.key)) {
-          return [...prevMessages, { ...message, id: snapshot.key! }];
-        }
-        return prevMessages;
-      });
     });
 
     return () => {
-      off(chatRef, 'child_added', handleNewMessage);
+      off(ref(database, `chats/${id}/messages`), 'child_added', handleNewMessage);
     };
-  }, [id, currentUser, router]);
+  }, [id, currentUser, router, isInitialLoad]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -113,7 +125,7 @@ export default function ChatPage() {
   const sendMessage = async () => {
     if (!currentUser || !newMessage.trim()) return;
 
-    const chatRef = ref(database, `chats/${id}`);
+    const chatRef = ref(database, `chats/${id}/messages`);
     const newMessageRef = push(chatRef);
     const messageData = {
       senderId: currentUser.uid,
@@ -131,14 +143,14 @@ export default function ChatPage() {
       await set(userChatRef, {
         lastMessage: newMessage.trim(),
         timestamp: Date.now(),
-        listingId: id,
+        listingId: listing?.id,
         listingTitle: listing?.title || 'Unknown Listing',
       });
     };
 
     await updateUserChats(currentUser.uid);
     if (otherUser) {
-      await updateUserChats(otherUser.id);  // Changed from otherUser.uid to otherUser.id
+      await updateUserChats(otherUser.id);
     }
 
     setNewMessage('');
@@ -160,7 +172,9 @@ export default function ChatPage() {
     router.push('/chats');
   };
 
-  const getInitial = (name: string) => name.charAt(0).toUpperCase();
+  const getInitial = (name: string | undefined) => {
+    return name ? name.charAt(0).toUpperCase() : '?';
+  };
 
   if (!currentUser) {
     return <div>Please log in to view this chat.</div>;

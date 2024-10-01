@@ -4,22 +4,15 @@
     ".write": false,
     
     "chats": {
-      "$chatId": {
-        ".read": "auth != null",
-        ".write": "auth != null",
-        "$messageId": {
-          ".validate": "newData.hasChildren(['senderId', 'text', 'timestamp']) && newData.child('senderId').val() == auth.uid"
-        }
-      }
+      ".read": true,
+      ".write": true
     },
-
+    
     "userChats": {
-      "$userId": {
-        ".read": "auth != null && auth.uid == $userId",
-        ".write": "auth != null"
-      }
+      ".read": true,
+      ".write": true
     },
-
+    
     "listings": {
       ".read": true,
       "$listingId": {
