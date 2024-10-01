@@ -33,7 +33,8 @@ interface User {
 }
 
 export default function ChatPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string;
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [listing, setListing] = useState<Listing | null>(null);

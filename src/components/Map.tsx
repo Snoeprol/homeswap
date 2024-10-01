@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from 'next/link';
 
+// Add this import at the top of your file
+import { Loader } from '@googlemaps/js-api-loader';
+
+// Define the google object
+declare global {
+  interface Window {
+    google: typeof google;
+  }
+}
+
 interface Listing {
   id: string;
   title: string;
@@ -23,43 +33,27 @@ const Map: React.FC<MapProps> = ({ listings }) => {
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
 
   useEffect(() => {
-    const loadGoogleMapsScript = () => {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&callback=initMap`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    };
+    const loader = new Loader({
+      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
+      version: "weekly",
+    });
 
-    if (!window.google) {
-      window.initMap = initMap;
-      loadGoogleMapsScript();
-    } else {
-      initMap();
-    }
-
-    return () => {
-      if (map) {
-        markers.forEach(marker => marker.setMap(null));
+    loader.load().then(() => {
+      if (mapRef.current && !map) {
+        const newMap = new window.google.maps.Map(mapRef.current, {
+          center: { lat: 0, lng: 0 },
+          zoom: 2,
+        });
+        setMap(newMap);
       }
-    };
-  }, []);
+    });
+  }, [map]);
 
   useEffect(() => {
     if (map) {
       updateMarkers();
     }
   }, [listings, map]);
-
-  const initMap = () => {
-    if (mapRef.current && !map) {
-      const newMap = new google.maps.Map(mapRef.current, {
-        center: { lat: 0, lng: 0 },
-        zoom: 2,
-      });
-      setMap(newMap);
-    }
-  };
 
   const truncateText = (text: string, maxLength: number) => {
     if (text.length <= maxLength) return text;
@@ -70,19 +64,19 @@ const Map: React.FC<MapProps> = ({ listings }) => {
     markers.forEach(marker => marker.setMap(null));
     setMarkers([]);
 
-    const bounds = new google.maps.LatLngBounds();
+    const bounds = new window.google.maps.LatLngBounds();
     const newMarkers: google.maps.Marker[] = [];
 
     listings.forEach(listing => {
       if (listing.latitude && listing.longitude) {
-        const position = new google.maps.LatLng(listing.latitude, listing.longitude);
-        const marker = new google.maps.Marker({
+        const position = new window.google.maps.LatLng(listing.latitude, listing.longitude);
+        const marker = new window.google.maps.Marker({
           position,
           map,
           title: listing.title,
         });
 
-        const infoWindow = new google.maps.InfoWindow({
+        const infoWindow = new window.google.maps.InfoWindow({
           content: `
             <div class="custom-info-window">
               <div class="info-window-content">
@@ -97,7 +91,7 @@ const Map: React.FC<MapProps> = ({ listings }) => {
           infoWindow.open(map, marker);
         });
 
-        google.maps.event.addListener(infoWindow, 'domready', () => {
+        window.google.maps.event.addListener(infoWindow, 'domready', () => {
           const button = document.getElementById(`view-listing-${listing.id}`);
           if (button) {
             button.addEventListener('click', () => {

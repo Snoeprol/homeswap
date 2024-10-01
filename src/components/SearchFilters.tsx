@@ -6,16 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarIcon, DollarSignIcon, MapPinIcon, HomeIcon } from "lucide-react";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
 
 interface Filters {
   minPrice: string;
   maxPrice: string;
   propertyType: string;
   location: string;
-  dateRange: {
-    from: Date | undefined;
-    to: Date | undefined;
-  };
+  dateRange: DateRange | undefined;
 }
 
 const propertyTypes = [
@@ -33,10 +31,7 @@ export default function SearchFilters({ onFilter }: { onFilter: (filters: Filter
     maxPrice: '',
     propertyType: '',
     location: '',
-    dateRange: {
-      from: undefined,
-      to: undefined,
-    },
+    dateRange: undefined,
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +42,7 @@ export default function SearchFilters({ onFilter }: { onFilter: (filters: Filter
     setFilters({ ...filters, propertyType: value });
   };
 
-  const handleDateRangeChange = (range: { from: Date | undefined; to: Date | undefined }) => {
+  const handleDateRangeChange = (range: DateRange | undefined) => {
     setFilters({ ...filters, dateRange: range });
   };
 
@@ -116,13 +111,12 @@ export default function SearchFilters({ onFilter }: { onFilter: (filters: Filter
           </div>
           <div className="w-full md:w-auto flex-1">
             <DateRangePicker
-              from={filters.dateRange.from}
-              to={filters.dateRange.to}
-              onSelect={handleDateRangeChange}
+              dateRange={filters.dateRange}
+              onDateRangeChange={handleDateRangeChange}
             >
               <Button variant="outline" className="w-full justify-start text-left font-normal">
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {filters.dateRange.from ? (
+                {filters.dateRange?.from ? (
                   filters.dateRange.to ? (
                     <>
                       {filters.dateRange.from.toDateString()} - {filters.dateRange.to.toDateString()}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { database, auth } from '@/lib/firebase';
-import { ref, onValue, off, remove, get, set, push, serverTimestamp } from 'firebase/database';
+import { ref, get, set, push, serverTimestamp, remove } from 'firebase/database';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,7 +47,8 @@ const amenityIcons: { [key: string]: JSX.Element } = {
 };
 
 export default function ListingPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string;
   const router = useRouter();
   const [listing, setListing] = useState<Listing | null>(null);
   const [owner, setOwner] = useState<User | null>(null);
@@ -56,50 +57,30 @@ export default function ListingPage() {
   const currentUser = auth.currentUser;
 
   useEffect(() => {
-    const listingRef = ref(database, `listings/${id}`);
+    const fetchListing = async () => {
+      if (!id) return;
 
-    const listingListener = onValue(listingRef, (snapshot) => {
+      const listingRef = ref(database, `listings/${id}`);
+      const snapshot = await get(listingRef);
+
       if (snapshot.exists()) {
         const listingData = snapshot.val();
-        setListing({ id: snapshot.key!, ...listingData });
+        setListing({ id, ...listingData });
 
         // Fetch owner data
-        const ownerListener = onValue(ref(database, `users/${listingData.userId}`), (ownerSnapshot) => {
-          if (ownerSnapshot.exists()) {
-            const ownerData = ownerSnapshot.val();
-            setOwner({
-              displayName: ownerData.displayName || 'Unknown User',
-              photoURL: ownerData.photoURL || '',
-              email: ownerData.email || 'Email not available',
-            });
-          } else {
-            console.error('Owner data not found');
-            setOwner({
-              displayName: 'Unknown User',
-              photoURL: '',
-              email: 'Email not available',
-            });
-          }
-          setIsLoading(false);
-        });
-
-        return () => {
-          off(ref(database, `users/${listingData.userId}`), 'value', ownerListener);
-        };
+        const ownerRef = ref(database, `users/${listingData.userId}`);
+        const ownerSnapshot = await get(ownerRef);
+        if (ownerSnapshot.exists()) {
+          setOwner({ id: listingData.userId, ...ownerSnapshot.val() });
+        }
       } else {
-        setError('Listing not found');
-        setIsLoading(false);
+        // Handle case where listing doesn't exist
+        router.push('/404'); // or handle this case as you see fit
       }
-    }, (error) => {
-      console.error('Error fetching listing:', error);
-      setError('Failed to load listing');
-      setIsLoading(false);
-    });
-
-    return () => {
-      off(listingRef, 'value', listingListener);
     };
-  }, [id]);
+
+    fetchListing();
+  }, [id, router]);
 
   const handleChatClick = async () => {
     if (!currentUser) {
@@ -116,6 +97,10 @@ export default function ListingPage() {
       const listingOwnerId = listing?.userId;
       const currentUserId = currentUser.uid;
       
+      if (!listingOwnerId || !currentUserId) {
+        throw new Error("Missing user IDs");
+      }
+
       // Create a unique chatId
       const chatId = [currentUserId, listingOwnerId].sort().join('_');
 
@@ -127,11 +112,12 @@ export default function ListingPage() {
 
       if (!chatSnapshot.exists()) {
         // If the chat doesn't exist, create it
+        const participants: { [key: string]: boolean } = {};
+        participants[currentUserId] = true;
+        participants[listingOwnerId] = true;
+
         await set(chatRef, {
-          participants: {
-            [currentUserId]: true,
-            [listingOwnerId]: true
-          },
+          participants,
           listingId: listing?.id,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
