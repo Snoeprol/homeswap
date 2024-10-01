@@ -46,6 +46,13 @@ const amenityIcons: { [key: string]: JSX.Element } = {
   "Coffee Maker": <Coffee className="h-4 w-4" />,
 };
 
+const MAX_TITLE_LENGTH = 50; // Set the maximum title length
+
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
+};
+
 export default function ListingPage() {
   const params = useParams();
   const id = params?.id as string;
@@ -60,27 +67,36 @@ export default function ListingPage() {
     const fetchListing = async () => {
       if (!id) return;
 
-      const listingRef = ref(database, `listings/${id}`);
-      const snapshot = await get(listingRef);
+      setIsLoading(true);
+      setError(null);
 
-      if (snapshot.exists()) {
-        const listingData = snapshot.val();
-        setListing({ id, ...listingData });
+      try {
+        const listingRef = ref(database, `listings/${id}`);
+        const snapshot = await get(listingRef);
 
-        // Fetch owner data
-        const ownerRef = ref(database, `users/${listingData.userId}`);
-        const ownerSnapshot = await get(ownerRef);
-        if (ownerSnapshot.exists()) {
-          setOwner({ id: listingData.userId, ...ownerSnapshot.val() });
+        if (snapshot.exists()) {
+          const listingData = snapshot.val();
+          setListing({ id, ...listingData });
+
+          // Fetch owner data
+          const ownerRef = ref(database, `users/${listingData.userId}`);
+          const ownerSnapshot = await get(ownerRef);
+          if (ownerSnapshot.exists()) {
+            setOwner({ id: listingData.userId, ...ownerSnapshot.val() });
+          }
+        } else {
+          setError('Listing not found');
         }
-      } else {
-        // Handle case where listing doesn't exist
-        router.push('/404'); // or handle this case as you see fit
+      } catch (err) {
+        console.error('Error fetching listing:', err);
+        setError('Failed to load listing');
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchListing();
-  }, [id, router]);
+  }, [id]);
 
   const handleChatClick = async () => {
     if (!currentUser) {
@@ -176,11 +192,13 @@ export default function ListingPage() {
   if (error) return <div>Error: {error}</div>;
   if (!listing) return <div>Listing not found</div>;
 
+  const truncatedTitle = truncateText(listing.title, MAX_TITLE_LENGTH);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Card>
         <CardHeader>
-          <CardTitle>{listing.title}</CardTitle>
+          <CardTitle>{truncatedTitle}</CardTitle>
           <CardDescription>
             <div className="flex items-center space-x-2">
               <MapPin className="h-4 w-4" />

@@ -15,6 +15,7 @@ import { storage, auth, database } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ref as dbRef, push, set } from 'firebase/database';
 import { useRouter } from 'next/navigation';
+import { HomeIcon, BedDoubleIcon, BathIcon, SquareIcon, MapPinIcon, ImageIcon, AlertCircleIcon } from 'lucide-react';
 
 const listingSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters long'),
@@ -158,7 +159,7 @@ export default function ListYourHousePage() {
       form.reset();
       setImages([]);
       setImageUrls([]);
-      router.push('/profile'); // Redirect to profile or listings page
+      router.push('/profile');
     } catch (error) {
       console.error('Error creating listing:', error);
       if (error instanceof Error) {
@@ -174,15 +175,16 @@ export default function ListYourHousePage() {
   if (!isOnline) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
+        <AlertCircleIcon className="h-12 w-12 text-orange-500 mx-auto mb-4" />
         <h1 className="text-2xl font-bold mb-4">You are currently offline</h1>
-        <p>Please check your internet connection and try again.</p>
+        <p className="text-gray-600">Please check your internet connection and try again.</p>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">List Your House for Swap</h1>
+      <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">List Your House for Swap</h1>
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
           <strong className="font-bold">Error: </strong>
@@ -198,7 +200,7 @@ export default function ListYourHousePage() {
               <FormItem>
                 <FormLabel>Property Title</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input {...field} className="border-orange-200 focus:border-orange-500" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -212,7 +214,7 @@ export default function ListYourHousePage() {
                 <FormLabel>Property Type</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="border-orange-200 focus:border-orange-500">
                       <SelectValue placeholder="Select a property type" />
                     </SelectTrigger>
                   </FormControl>
@@ -235,7 +237,10 @@ export default function ListYourHousePage() {
                 <FormItem>
                   <FormLabel>Number of Bedrooms</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                    <div className="relative">
+                      <BedDoubleIcon className="absolute left-2 top-2.5 h-5 w-5 text-gray-400" />
+                      <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} className="pl-9 border-orange-200 focus:border-orange-500" />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -248,7 +253,10 @@ export default function ListYourHousePage() {
                 <FormItem>
                   <FormLabel>Number of Bathrooms</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                    <div className="relative">
+                      <BathIcon className="absolute left-2 top-2.5 h-5 w-5 text-gray-400" />
+                      <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} className="pl-9 border-orange-200 focus:border-orange-500" />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -261,7 +269,10 @@ export default function ListYourHousePage() {
                 <FormItem>
                   <FormLabel>Floor Number (optional)</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                    <div className="relative">
+                      <HomeIcon className="absolute left-2 top-2.5 h-5 w-5 text-gray-400" />
+                      <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} className="pl-9 border-orange-200 focus:border-orange-500" />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -275,7 +286,10 @@ export default function ListYourHousePage() {
               <FormItem>
                 <FormLabel>Total Area (in square meters)</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                  <div className="relative">
+                    <SquareIcon className="absolute left-2 top-2.5 h-5 w-5 text-gray-400" />
+                    <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} className="pl-9 border-orange-200 focus:border-orange-500" />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -288,7 +302,7 @@ export default function ListYourHousePage() {
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Textarea {...field} rows={5} />
+                  <Textarea {...field} rows={5} className="border-orange-200 focus:border-orange-500" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -302,7 +316,10 @@ export default function ListYourHousePage() {
                 <FormItem>
                   <FormLabel>Address</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <div className="relative">
+                      <MapPinIcon className="absolute left-2 top-2.5 h-5 w-5 text-gray-400" />
+                      <Input {...field} className="pl-9 border-orange-200 focus:border-orange-500" />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -315,7 +332,7 @@ export default function ListYourHousePage() {
                 <FormItem>
                   <FormLabel>City</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} className="border-orange-200 focus:border-orange-500" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -328,7 +345,7 @@ export default function ListYourHousePage() {
                 <FormItem>
                   <FormLabel>Country</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} className="border-orange-200 focus:border-orange-500" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -341,7 +358,7 @@ export default function ListYourHousePage() {
                 <FormItem>
                   <FormLabel>Postal Code</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} className="border-orange-200 focus:border-orange-500" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -400,7 +417,7 @@ export default function ListYourHousePage() {
               <FormItem>
                 <FormLabel>House Rules (optional)</FormLabel>
                 <FormControl>
-                  <Textarea {...field} rows={3} />
+                  <Textarea {...field} rows={3} className="border-orange-200 focus:border-orange-500" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -413,7 +430,10 @@ export default function ListYourHousePage() {
               <FormItem>
                 <FormLabel>Monthly Rent (in local currency)</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+                  <div className="relative">
+                    <span className="absolute left-2 top-2.5 text-gray-400">$</span>
+                    <Input type="number" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} className="pl-6 border-orange-200 focus:border-orange-500" />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -446,7 +466,9 @@ export default function ListYourHousePage() {
                 onClick={() => fileInputRef.current?.click()}
                 variant="outline"
                 disabled={images.length >= 10}
+                className="border-orange-200 hover:bg-orange-100"
               >
+                <ImageIcon className="h-5 w-5 mr-2" />
                 {images.length >= 10 ? 'Max images reached' : 'Upload Images'}
               </Button>
               <input
@@ -487,7 +509,7 @@ export default function ListYourHousePage() {
               ))}
             </div>
           </div>
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600" disabled={isSubmitting}>
             {isSubmitting ? 'Submitting...' : 'Submit Listing'}
           </Button>
         </form>

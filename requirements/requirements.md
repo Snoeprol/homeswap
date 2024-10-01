@@ -1,4 +1,4 @@
-# HouseSwap Platform Requirements
+# Huisruil Platform Requirements
 
 ---
 

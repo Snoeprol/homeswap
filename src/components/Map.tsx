@@ -1,14 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from 'next/link';
-
-// Add this import at the top of your file
 import { Loader } from '@googlemaps/js-api-loader';
+import { Button } from "@/components/ui/button";
 
-// Define the google object
 declare global {
   interface Window {
     google: typeof google;
@@ -21,13 +16,14 @@ interface Listing {
   latitude?: number;
   longitude?: number;
   address?: string;
+  images: string[];
 }
 
 interface MapProps {
   listings: Listing[];
 }
 
-const Map: React.FC<MapProps> = ({ listings }) => {
+export default function Map({ listings }: MapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
@@ -43,6 +39,23 @@ const Map: React.FC<MapProps> = ({ listings }) => {
         const newMap = new window.google.maps.Map(mapRef.current, {
           center: { lat: 0, lng: 0 },
           zoom: 2,
+          styles: [
+            {
+              featureType: "all",
+              elementType: "geometry",
+              stylers: [{ color: "#f5f5f5" }]
+            },
+            {
+              featureType: "water",
+              elementType: "geometry",
+              stylers: [{ color: "#e9e9e9" }]
+            },
+            {
+              featureType: "water",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#9e9e9e" }]
+            }
+          ]
         });
         setMap(newMap);
       }
@@ -70,19 +83,32 @@ const Map: React.FC<MapProps> = ({ listings }) => {
     listings.forEach(listing => {
       if (listing.latitude && listing.longitude) {
         const position = new window.google.maps.LatLng(listing.latitude, listing.longitude);
+        
+        const markerIcon = {
+          path: "M12 0C7.58 0 4 3.58 4 8c0 5.25 7 13 7 13s7-7.75 7-13c0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z",
+          fillColor: "#f97316",
+          fillOpacity: 1,
+          strokeWeight: 1,
+          strokeColor: "#ffffff",
+          scale: 1.5,
+          anchor: new google.maps.Point(12, 24),
+        };
+
         const marker = new window.google.maps.Marker({
           position,
           map,
+          icon: markerIcon,
           title: listing.title,
         });
 
         const infoWindow = new window.google.maps.InfoWindow({
           content: `
-            <div class="custom-info-window">
-              <div class="info-window-content">
-                <h3 class="info-window-title">${truncateText(listing.title, 30)}</h3>
-                <button id="view-listing-${listing.id}" class="view-listing-btn">View Listing</button>
-              </div>
+            <div class="bg-white rounded-lg shadow-md p-4 max-w-xs">
+              <img src="${listing.images[0] || '/placeholder.svg'}" alt="${listing.title}" class="w-full h-32 object-cover rounded-md mb-2">
+              <h3 class="text-lg font-semibold mb-2 text-gray-800">${truncateText(listing.title, 30)}</h3>
+              <button id="view-listing-${listing.id}" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white py-2 px-4 rounded hover:from-orange-600 hover:to-amber-600 transition-colors">
+                View Listing
+              </button>
             </div>
           `,
         });
@@ -113,43 +139,8 @@ const Map: React.FC<MapProps> = ({ listings }) => {
   };
 
   return (
-    <>
-      <div ref={mapRef} style={{ height: '400px', width: '100%' }} />
-      <style jsx global>{`
-        .custom-info-window {
-          background-color: white;
-          border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-          padding: 12px;
-          max-width: 250px;
-        }
-        .info-window-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-        .info-window-title {
-          font-size: 16px;
-          font-weight: bold;
-          margin-bottom: 8px;
-          text-align: center;
-        }
-        .view-listing-btn {
-          background-color: #3b82f6;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          padding: 8px 12px;
-          font-size: 14px;
-          cursor: pointer;
-          transition: background-color 0.3s;
-        }
-        .view-listing-btn:hover {
-          background-color: #2563eb;
-        }
-      `}</style>
-    </>
+    <div className="relative w-full h-[600px] rounded-lg overflow-hidden shadow-md">
+      <div ref={mapRef} className="w-full h-full" />
+    </div>
   );
-};
-
-export default Map;
+}

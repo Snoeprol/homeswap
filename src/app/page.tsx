@@ -3,20 +3,33 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRightIcon, HomeIcon, SearchIcon, KeyIcon } from "lucide-react";
+import { ArrowRightIcon, HomeIcon, SearchIcon, KeyIcon, MapIcon, ListIcon } from "lucide-react";
 import { database } from '@/lib/firebase';
 import { ref, get, query, limitToLast } from 'firebase/database';
 import { useState, useEffect } from 'react';
+import Map from '@/components/Map';
+import { Switch } from "@/components/ui/switch";
 
 interface Listing {
   id: string;
   title: string;
   description: string;
   images: string[];
+  latitude: number;
+  longitude: number;
 }
+
+const MAX_TITLE_LENGTH = 30;
+const MAX_DESCRIPTION_LENGTH = 100;
+
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
+};
 
 export default function Home() {
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([]);
+  const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -43,10 +56,10 @@ export default function Home() {
       <div className="container mx-auto px-4 py-12">
         <section className="text-center mb-16">
           <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
-            Swap Homes, Create Memories
+            Huisruil: Swap Rental Homes
           </h1>
           <p className="text-xl mb-8 text-gray-600 max-w-2xl mx-auto">
-            Experience new places like a local. HouseSwap connects you with homeowners worldwide for unforgettable exchanges.
+            Start a new chapter in your life. Huisruil connects you with renters worldwide for permanent home exchanges, offering a fresh beginning in a new environment.
           </p>
           <Button asChild size="lg" className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white">
             <Link href="/auth" className="inline-flex items-center">
@@ -77,28 +90,50 @@ export default function Home() {
 
         <section className="mb-20">
           <h2 className="text-3xl font-bold mb-10 text-center text-gray-800">Featured Homes</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredListings.map((listing) => (
-              <div key={listing.id} className="rounded-xl overflow-hidden bg-white shadow-lg transition-all hover:shadow-xl">
-                <Image 
-                  src={listing.images[0] || '/placeholder.jpg'}
-                  alt={listing.title} 
-                  width={400} 
-                  height={300} 
-                  className="w-full h-56 object-cover"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2 text-gray-800">{listing.title}</h3>
-                  <p className="text-gray-600 mb-4">{listing.description.slice(0, 100)}...</p>
-                  <Button asChild variant="outline" className="w-full text-orange-500 border-orange-500 hover:bg-orange-50">
-                    <Link href={`/listing/${listing.id}`}>
-                      View Details
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            ))}
+          <div className="flex justify-end mb-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={showMap}
+                onCheckedChange={setShowMap}
+                id="show-map"
+              />
+              <label htmlFor="show-map" className="text-sm font-medium">
+                {showMap ? <MapIcon className="h-5 w-5" /> : <ListIcon className="h-5 w-5" />}
+              </label>
+            </div>
           </div>
+          {showMap ? (
+            <div className="h-[400px]">
+              <Map listings={featuredListings} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {featuredListings.map((listing) => (
+                <div key={listing.id} className="rounded-xl overflow-hidden bg-white shadow-lg transition-all hover:shadow-xl">
+                  <Image 
+                    src={listing.images[0] || '/placeholder.jpg'}
+                    alt={listing.title} 
+                    width={400} 
+                    height={300} 
+                    className="w-full h-56 object-cover"
+                  />
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-2 text-gray-800">
+                      {truncateText(listing.title, MAX_TITLE_LENGTH)}
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      {truncateText(listing.description, MAX_DESCRIPTION_LENGTH)}
+                    </p>
+                    <Button asChild variant="outline" className="w-full text-orange-500 border-orange-500 hover:bg-orange-50">
+                      <Link href={`/listing/${listing.id}`}>
+                        View Details
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="text-center mb-20 bg-white rounded-xl shadow-lg p-10">
@@ -117,7 +152,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-lg font-semibold mb-4">About HouseSwap</h3>
+              <h3 className="text-lg font-semibold mb-4">About Huisruil</h3>
               <p className="text-gray-400">Connecting homeowners worldwide for unforgettable travel experiences.</p>
             </div>
             <div>
@@ -146,7 +181,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-gray-700 text-center text-gray-400">
-            <p>&copy; {new Date().getFullYear()} HouseSwap. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Huisruil. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -95,7 +95,7 @@ export default function AuthPage() {
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="p-8">
           <h1 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
-            {isLogin ? 'Login to HouseSwap' : 'Sign Up for HouseSwap'}
+            {isLogin ? 'Login to Huisruil' : 'Sign Up for Huisruil'}
           </h1>
           <div className="flex items-center justify-center mb-6">
             <Label htmlFor="auth-switch" className="mr-2">Sign Up</Label>

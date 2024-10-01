@@ -15,10 +15,7 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-export const metadata: Metadata = {
-  title: "HouseSwap - Swap Homes, Create Memories",
-  description: "Experience new places like a local with HouseSwap. Connect with homeowners worldwide for unforgettable home exchanges.",
-};
+
 
 export default function RootLayout({
   children,

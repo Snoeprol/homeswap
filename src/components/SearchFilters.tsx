@@ -4,16 +4,19 @@ import { useState, ChangeEvent, FormEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, DollarSignIcon, MapPinIcon, HomeIcon } from "lucide-react";
+import { CalendarIcon, EuroIcon, MapPinIcon, HomeIcon } from "lucide-react";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 
-interface Filters {
+export interface Filters {
   minPrice: string;
   maxPrice: string;
   propertyType: string;
   location: string;
-  dateRange: DateRange | undefined;
+  dateRange: {
+    from: Date | undefined;
+    to: Date | undefined;
+  };
 }
 
 const propertyTypes = [
@@ -31,7 +34,10 @@ export default function SearchFilters({ onFilter }: { onFilter: (filters: Filter
     maxPrice: '',
     propertyType: '',
     location: '',
-    dateRange: undefined,
+    dateRange: {
+      from: undefined,
+      to: undefined,
+    },
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -43,7 +49,13 @@ export default function SearchFilters({ onFilter }: { onFilter: (filters: Filter
   };
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
-    setFilters({ ...filters, dateRange: range });
+    setFilters({
+      ...filters,
+      dateRange: {
+        from: range?.from,
+        to: range?.to
+      }
+    });
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -57,7 +69,7 @@ export default function SearchFilters({ onFilter }: { onFilter: (filters: Filter
         <form onSubmit={handleSubmit} className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
           <div className="w-full md:w-auto flex-1">
             <div className="relative">
-              <DollarSignIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <EuroIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
               <Input
                 type="number"
                 name="minPrice"
@@ -70,7 +82,7 @@ export default function SearchFilters({ onFilter }: { onFilter: (filters: Filter
           </div>
           <div className="w-full md:w-auto flex-1">
             <div className="relative">
-              <DollarSignIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <EuroIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
               <Input
                 type="number"
                 name="maxPrice"
@@ -110,25 +122,6 @@ export default function SearchFilters({ onFilter }: { onFilter: (filters: Filter
             </div>
           </div>
           <div className="w-full md:w-auto flex-1">
-            <DateRangePicker
-              dateRange={filters.dateRange}
-              onDateRangeChange={handleDateRangeChange}
-            >
-              <Button variant="outline" className="w-full justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {filters.dateRange?.from ? (
-                  filters.dateRange.to ? (
-                    <>
-                      {filters.dateRange.from.toDateString()} - {filters.dateRange.to.toDateString()}
-                    </>
-                  ) : (
-                    filters.dateRange.from.toDateString()
-                  )
-                ) : (
-                  <span>Pick a date range</span>
-                )}
-              </Button>
-            </DateRangePicker>
           </div>
           <Button type="submit" className="w-full md:w-auto bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600">
             Apply Filters
