@@ -1,0 +1,5 @@
+Let us rethink the way chats are stored. When a user presses the contact owner in @page.tsx , it should create add an object to chats, with user1, user2, and the messages times etc. At the same time, add to userChats database an object for that user e.g. in this case
+
+add 2 userChats:
+
+one for user1 contacting user2 with Id of chatId (that was just created), then in the chats overview, retrieve all hte chats of user1, when he is looking at it , chatId should be different from listing ID. Chatpage is @page.tsx 

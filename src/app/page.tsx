@@ -1,9 +1,43 @@
+"use client"
+
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRightIcon, HomeIcon, SearchIcon, KeyIcon } from "lucide-react";
+import { database } from '@/lib/firebase';
+import { ref, get, query, limitToLast } from 'firebase/database';
+import { useState, useEffect } from 'react';
+
+interface Listing {
+  id: string;
+  title: string;
+  description: string;
+  images: string[];
+}
 
 export default function Home() {
+  const [featuredListings, setFeaturedListings] = useState<Listing[]>([]);
+
+  useEffect(() => {
+    const fetchListings = async () => {
+      const listingsRef = ref(database, 'listings');
+      const listingsQuery = query(listingsRef, limitToLast(10)); // Fetch last 10 listings
+      const snapshot = await get(listingsQuery);
+      
+      if (snapshot.exists()) {
+        const listings = Object.entries(snapshot.val()).map(([id, data]) => ({
+          id,
+          ...(data as Omit<Listing, 'id'>)
+        }));
+        // Shuffle and select 3 random listings
+        const shuffled = listings.sort(() => 0.5 - Math.random());
+        setFeaturedListings(shuffled.slice(0, 3));
+      }
+    };
+
+    fetchListings();
+  }, []);
+
   return (
     <div className="bg-gradient-to-b from-orange-50 to-amber-100">
       <div className="container mx-auto px-4 py-12">
@@ -44,20 +78,22 @@ export default function Home() {
         <section className="mb-20">
           <h2 className="text-3xl font-bold mb-10 text-center text-gray-800">Featured Homes</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-xl overflow-hidden bg-white shadow-lg transition-all hover:shadow-xl">
+            {featuredListings.map((listing) => (
+              <div key={listing.id} className="rounded-xl overflow-hidden bg-white shadow-lg transition-all hover:shadow-xl">
                 <Image 
-                  src={`/placeholder.svg?height=300&width=400&text=Home+${i}`}
-                  alt={`Featured Home ${i}`} 
+                  src={listing.images[0] || '/placeholder.jpg'}
+                  alt={listing.title} 
                   width={400} 
                   height={300} 
                   className="w-full h-56 object-cover"
                 />
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2 text-gray-800">Charming Retreat in Location {i}</h3>
-                  <p className="text-gray-600 mb-4">Immerse yourself in local culture and comfort in this beautiful property.</p>
-                  <Button variant="outline" className="w-full text-orange-500 border-orange-500 hover:bg-orange-50">
-                    View Details
+                  <h3 className="text-xl font-semibold mb-2 text-gray-800">{listing.title}</h3>
+                  <p className="text-gray-600 mb-4">{listing.description.slice(0, 100)}...</p>
+                  <Button asChild variant="outline" className="w-full text-orange-500 border-orange-500 hover:bg-orange-50">
+                    <Link href={`/listing/${listing.id}`}>
+                      View Details
+                    </Link>
                   </Button>
                 </div>
               </div>
