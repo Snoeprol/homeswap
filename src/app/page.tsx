@@ -56,10 +56,10 @@ export default function Home() {
       <div className="container mx-auto px-4 py-12">
         <section className="text-center mb-16">
           <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
-            Huisruil: Swap Rental Homes
+            Woonruil: Swap Rental Homes
           </h1>
           <p className="text-xl mb-8 text-gray-600 max-w-2xl mx-auto">
-            Start a new chapter in your life. Huisruil connects you with renters worldwide for permanent home exchanges, offering a fresh beginning in a new environment.
+            Start a new chapter in your life. Woonruil connects you with renters worldwide for permanent home exchanges, offering a fresh beginning in a new environment.
           </p>
           <Button asChild size="lg" className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white">
             <Link href="/auth" className="inline-flex items-center">
@@ -152,7 +152,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-lg font-semibold mb-4">About Huisruil</h3>
+              <h3 className="text-lg font-semibold mb-4">About Woonruil</h3>
               <p className="text-gray-400">Connecting homeowners worldwide for unforgettable travel experiences.</p>
             </div>
             <div>
@@ -181,7 +181,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-gray-700 text-center text-gray-400">
-            <p>&copy; {new Date().getFullYear()} Huisruil. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Woonruil. All rights reserved.</p>
           </div>
         </div>
       </footer>
