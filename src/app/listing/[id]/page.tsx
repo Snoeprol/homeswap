@@ -12,6 +12,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MapPin, BedDouble, Bath, Square, Wifi, Tv, Car, Snowflake, Coffee, MessageCircle, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { User as FirebaseUser } from 'firebase/auth';
 
 interface Listing {
   id: string;
@@ -32,10 +33,12 @@ interface Listing {
   userId: string;
 }
 
+// Modify the User interface to match Firebase User properties
 interface User {
-  displayName: string;
-  photoURL: string;
-  email: string;
+  uid: string;
+  displayName: string | null;
+  photoURL: string | null;
+  email: string | null;
 }
 
 const amenityIcons: { [key: string]: JSX.Element } = {
@@ -61,7 +64,15 @@ export default function ListingPage() {
   const [owner, setOwner] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const currentUser = auth.currentUser;
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -78,7 +89,6 @@ export default function ListingPage() {
           const listingData = snapshot.val();
           setListing({ id, ...listingData });
 
-          // Fetch owner data
           const ownerRef = ref(database, `users/${listingData.userId}`);
           const ownerSnapshot = await get(ownerRef);
           if (ownerSnapshot.exists()) {
@@ -117,17 +127,11 @@ export default function ListingPage() {
         throw new Error("Missing user IDs");
       }
 
-      // Create a unique chatId
       const chatId = [currentUserId, listingOwnerId].sort().join('_');
-
-      // Reference to the chat in the database
       const chatRef = ref(database, `chats/${chatId}`);
-
-      // Check if the chat already exists
       const chatSnapshot = await get(chatRef);
 
       if (!chatSnapshot.exists()) {
-        // If the chat doesn't exist, create it
         const participants: { [key: string]: boolean } = {};
         participants[currentUserId] = true;
         participants[listingOwnerId] = true;
@@ -139,7 +143,6 @@ export default function ListingPage() {
           updatedAt: serverTimestamp()
         });
 
-        // Create initial message
         const messagesRef = ref(database, `chats/${chatId}/messages`);
         await push(messagesRef, {
           senderId: currentUserId,
@@ -147,7 +150,6 @@ export default function ListingPage() {
           timestamp: serverTimestamp()
         });
 
-        // Add chat to both users' userChats
         await set(ref(database, `userChats/${currentUserId}/${chatId}`), {
           withUser: listingOwnerId,
           listingId: listing?.id,
@@ -165,7 +167,6 @@ export default function ListingPage() {
         });
       }
 
-      // Navigate to the chat page
       router.push(`/chat/${chatId}`);
     } catch (error) {
       console.error("Error creating chat:", error);
@@ -181,37 +182,37 @@ export default function ListingPage() {
     try {
       const listingRef = ref(database, `listings/${id}`);
       await remove(listingRef);
-      router.push('/profile'); // Redirect to profile page after deletion
+      router.push('/profile');
     } catch (error) {
       console.error('Error deleting listing:', error);
       alert('Failed to delete listing. Please try again.');
     }
   };
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
-  if (!listing) return <div>Listing not found</div>;
+  if (isLoading) return <div className="container mx-auto px-4 py-8">Loading...</div>;
+  if (error) return <div className="container mx-auto px-4 py-8">Error: {error}</div>;
+  if (!listing) return <div className="container mx-auto px-4 py-8">Listing not found</div>;
 
   const truncatedTitle = truncateText(listing.title, MAX_TITLE_LENGTH);
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Card>
+      <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle>{truncatedTitle}</CardTitle>
+          <CardTitle className="text-2xl md:text-3xl">{truncatedTitle}</CardTitle>
           <CardDescription>
             <div className="flex items-center space-x-2">
               <MapPin className="h-4 w-4" />
-              <span>{listing.address}, {listing.city}, {listing.country}</span>
+              <span className="text-sm md:text-base">{listing.address}, {listing.city}, {listing.country}</span>
             </div>
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Carousel className="w-full max-w-xs mx-auto">
+          <Carousel className="w-full max-w-xs md:max-w-md mx-auto">
             <CarouselContent>
               {listing.images.map((image, index) => (
                 <CarouselItem key={index}>
-                  <Image src={image} alt={`Listing image ${index + 1}`} width={300} height={200} className="rounded-lg object-cover" />
+                  <Image src={image} alt={`Listing image ${index + 1}`} width={300} height={200} className="rounded-lg object-cover w-full h-48 md:h-64" />
                 </CarouselItem>
               ))}
             </CarouselContent>
@@ -219,8 +220,8 @@ export default function ListingPage() {
             <CarouselNext />
           </Carousel>
 
-          <div className="mt-6 flex justify-between items-center">
-            <div className="flex items-center space-x-4">
+          <div className="mt-6 flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div className="flex flex-wrap gap-4 mb-4 md:mb-0">
               <div className="flex items-center">
                 <BedDouble className="h-5 w-5 mr-1" />
                 <span>{listing.bedrooms} Bedrooms</span>
@@ -234,16 +235,14 @@ export default function ListingPage() {
                 <span>{listing.totalArea} m²</span>
               </div>
             </div>
-            <div>
-              <Badge variant={listing.isRentInclusive ? "default" : "secondary"}>
-                {listing.isRentInclusive ? "All-inclusive" : "Utilities not included"}
-              </Badge>
-            </div>
+            <Badge variant={listing.isRentInclusive ? "default" : "secondary"}>
+              {listing.isRentInclusive ? "All-inclusive" : "Utilities not included"}
+            </Badge>
           </div>
 
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-2">Description</h3>
-            <p>{listing.description}</p>
+            <p className="text-sm md:text-base">{listing.description}</p>
           </div>
 
           <div className="mt-6">
@@ -261,14 +260,14 @@ export default function ListingPage() {
           {listing.houseRules && (
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2">House Rules</h3>
-              <p>{listing.houseRules}</p>
+              <p className="text-sm md:text-base">{listing.houseRules}</p>
             </div>
           )}
         </CardContent>
-        <CardFooter className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
+        <CardFooter className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div className="flex items-center space-x-4 mb-4 md:mb-0">
             <Avatar>
-              <AvatarImage src={owner?.photoURL} />
+              <AvatarImage src={owner?.photoURL || undefined} />
               <AvatarFallback>{owner?.displayName?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
             <div>
@@ -276,8 +275,8 @@ export default function ListingPage() {
               <p className="text-sm text-gray-500">{owner?.email}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <p className="text-2xl font-bold">${listing.rentPrice}/month</p>
+          <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-2">
+            <p className="text-2xl font-bold">€{listing.rentPrice}/month</p>
             {currentUser && currentUser.uid === listing.userId ? (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -300,7 +299,7 @@ export default function ListingPage() {
                 </AlertDialogContent>
               </AlertDialog>
             ) : (
-              <Button onClick={handleChatClick}>
+              <Button onClick={handleChatClick} className="w-full md:w-auto">
                 <MessageCircle className="mr-2 h-4 w-4" />
                 Contact Owner
               </Button>

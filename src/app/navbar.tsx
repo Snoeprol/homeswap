@@ -33,7 +33,15 @@ export default function Navbar() {
       }
     });
 
-    return () => unsubscribe();
+    // Set a timeout to stop showing the loading state after 3 seconds
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   const fetchChats = (userId: string) => {
@@ -82,7 +90,9 @@ export default function Navbar() {
         <SearchIcon className="h-5 w-5 mr-1" />
         Browse Homes
       </Link>
-      {user ? (
+      {isLoading ? (
+        <span className="text-gray-600">Loading...</span>
+      ) : user ? (
         <>
           <Link href="/list-your-house" className="flex items-center text-gray-600 hover:text-orange-500 transition-colors">
             <HomeIcon className="h-5 w-5 mr-1" />
@@ -125,7 +135,7 @@ export default function Navbar() {
           <div className="hidden md:flex space-x-4 items-center">
             <NavItems />
           </div>
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleMobileMenu}>
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             {isMobileMenuOpen ? <XIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
           </Button>
         </nav>

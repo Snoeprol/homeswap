@@ -254,7 +254,7 @@ export default function ProfilePage() {
                     <div className="p-4">
                       <h3 className="font-semibold text-lg mb-2">{listing.title}</h3>
                       <p className="text-gray-600 mb-2">{listing.propertyType} in {listing.city}, {listing.country}</p>
-                      <p className="text-orange-600 font-bold">${listing.rentPrice}/month</p>
+                      <p className="text-orange-600 font-bold">€{listing.rentPrice}/month</p>
                       <Link href={`/listing/${listing.id}`} passHref>
                         <Button className="mt-2 w-full">View Listing</Button>
                       </Link>
